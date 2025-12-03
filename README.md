@@ -258,71 +258,44 @@ DELAY_QUEUE_SECRET=
 
 ## 🧊 ChatKit 集成指引
 
-> 官方 SDK：[https://github.com/openai/chatkit-js](https://github.com/openai/chatkit-js)
+> **注意：** ChatKit 整合目前使用 mock 實作，待實際 API 確定後再進行整合。
 
-### 安裝 SDK
+### 當前狀態
 
-```bash
-pnpm add @openai/chatkit
-```
+專案已預留 ChatKit 整合的架構，但使用模擬實作以確保專案可以建置和部署。
 
-### 建立 ChatKit Client
+### 未來整合步驟
 
-**檔案：** `lib/chatkit/client.ts`
+1. **確認 ChatKit SDK**
+   - 確認正確的 npm 套件名稱
+   - 安裝官方 SDK
+
+2. **更新客戶端**
+   - 修改 `lib/chatkit/client.ts`
+   - 實作真實的 API 呼叫
+
+3. **設定環境變數**
+   ```env
+   CHATKIT_API_KEY=your-api-key
+   CHATKIT_PROJECT_ID=your-project-id
+   ```
+
+### 暫時方案
+
+目前使用 OpenAI API 或 Google Gemini API 作為替代方案：
 
 ```typescript
-import { ChatKit } from "@openai/chatkit";
+// 使用 OpenAI API
+import OpenAI from 'openai';
 
-export const chatkit = new ChatKit({
-  apiKey: process.env.CHATKIT_API_KEY!,
-  projectId: process.env.CHATKIT_PROJECT_ID!,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
-```
 
-### 三男神訊息生成
+// 或使用 Google Gemini
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-**檔案：** `lib/chatkit/generate.ts`
-
-```typescript
-export async function generateWindMessage({ role, userState, prompt }) {
-  const stream = await chatkit.messages.create({
-    model: "gpt-4.1-mini",
-    messages: [
-      {
-        role: "system",
-        content: `你是獵風男團角色：${role}。請根據以下心風狀態回覆。
-心風階段：${userState.windPhase}
-語氣：保持角色一致性，不可提到AI。`
-      },
-      { role: "user", content: prompt }
-    ],
-    stream: false,
-  });
-
-  return stream.output_text;
-}
-```
-
-### 語音生成行程（串 ElevenLabs）
-
-**檔案：** `lib/voice/scheduler.ts`
-
-```typescript
-import { scheduleVoiceTask } from "@/lib/voice/scheduler";
-
-export async function replyWithDelay({
-  role,
-  text,
-  delayMinutes,
-  userId
-}) {
-  await scheduleVoiceTask({
-    userId,
-    text,
-    voiceId: mapVoice(role),
-    delay: delayMinutes * 60 * 1000,
-  });
-}
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 ```
 
 ---
