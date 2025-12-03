@@ -3,7 +3,7 @@
  * Message Generation with ChatKit
  */
 
-import { chatkit } from './client';
+import { getChatKit, isChatKitConfigured } from './client';
 import { Character, getSystemPrompt } from '../tone-router/router';
 import { WindPhase } from '../wind-engine';
 
@@ -31,6 +31,13 @@ export async function generateWindMessage({
     prompt,
     model = 'gpt-4.1-mini',
 }: GenerateMessageParams): Promise<string> {
+    // 檢查 ChatKit 是否已設定
+    if (!isChatKitConfigured()) {
+        console.warn('ChatKit is not configured. Returning mock response.');
+        return `[開發模式] ${character} 收到訊息：${prompt}`;
+    }
+
+    const chatkit = getChatKit();
     const systemPrompt = getSystemPrompt(character);
 
     const messages = [
