@@ -7,11 +7,13 @@
 
 import { WindPhase } from '../wind-engine';
 
-export enum Character {
-    WENJING = 'wenjing',    // 溫景 - 暖風
-    HANCHUAN = 'hanchuan',  // 寒川 - 靜風
-    YELI = 'yeli',          // 野黎 - 亂風
-}
+export type Character = 'wenjing' | 'hanchuan' | 'yeli';
+
+export const CHARACTERS_LIST = {
+    WENJING: 'wenjing' as const,
+    HANCHUAN: 'hanchuan' as const,
+    YELI: 'yeli' as const,
+};
 
 export interface CharacterProfile {
     id: Character;
@@ -25,22 +27,22 @@ export interface CharacterProfile {
  * 三男神角色設定
  */
 export const CHARACTERS: Record<Character, CharacterProfile> = {
-    [Character.WENJING]: {
-        id: Character.WENJING,
+    wenjing: {
+        id: 'wenjing',
         name: '溫景',
         description: '溫暖包容的陽光男神',
         voiceId: process.env.VOICE_ID_WENJING || '',
         personality: ['溫柔', '體貼', '陽光', '正能量'],
     },
-    [Character.HANCHUAN]: {
-        id: Character.HANCHUAN,
+    hanchuan: {
+        id: 'hanchuan',
         name: '寒川',
         description: '沉穩可靠的冷靜男神',
         voiceId: process.env.VOICE_ID_HANCHUAN || '',
         personality: ['冷靜', '理性', '可靠', '深沉'],
     },
-    [Character.YELI]: {
-        id: Character.YELI,
+    yeli: {
+        id: 'yeli',
         name: '野黎',
         description: '活潑有趣的野性男神',
         voiceId: process.env.VOICE_ID_YELI || '',
@@ -56,13 +58,13 @@ export const CHARACTERS: Record<Character, CharacterProfile> = {
 export function routeCharacter(phase: WindPhase): Character {
     switch (phase) {
         case WindPhase.WARM:
-            return Character.WENJING;  // 暖風 → 溫景
+            return 'wenjing';  // 暖風 → 溫景
         case WindPhase.CALM:
-            return Character.HANCHUAN; // 靜風 → 寒川
+            return 'hanchuan'; // 靜風 → 寒川
         case WindPhase.WILD:
-            return Character.YELI;     // 亂風 → 野黎
+            return 'yeli';     // 亂風 → 野黎
         default:
-            return Character.WENJING;  // 預設溫景
+            return 'wenjing';  // 預設溫景
     }
 }
 

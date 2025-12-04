@@ -1,13 +1,23 @@
 /**
  * 🧊 ChatKit 客戶端
- * OpenAI ChatKit Integration
+ * OpenAI API Integration
  * 
- * 注意：使用 mock 實作直到確認正確的 ChatKit SDK 用法
+ * 使用 OpenAI API 生成對話回應
  */
 
-// 環境變數檢查（開發時可選）
-const CHATKIT_API_KEY = process.env.CHATKIT_API_KEY || '';
-const CHATKIT_PROJECT_ID = process.env.CHATKIT_PROJECT_ID || '';
+import OpenAI from 'openai';
+
+// 環境變數檢查
+const OPENAI_API_KEY = process.env.CHATKIT_API_KEY || process.env.OPENAI_API_KEY || '';
+
+if (!OPENAI_API_KEY) {
+    console.warn('Warning: OPENAI_API_KEY or CHATKIT_API_KEY not configured');
+}
+
+// OpenAI 客戶端
+const openai = new OpenAI({
+    apiKey: OPENAI_API_KEY,
+});
 
 // ChatKit 介面定義
 interface ChatKitMessage {
@@ -15,72 +25,50 @@ interface ChatKitMessage {
     content: string;
 }
 
-interface ChatKitResponse {
-    output_text: string;
+interface GenerateMessageParams {
+    systemPrompt: string;
+    userMessage: string;
+    conversationHistory?: ChatKitMessage[];
+    model?: string;
 }
 
-interface ChatKitClient {
-    messages: {
-        create: (params: {
-            model: string;
-            messages: ChatKitMessage[];
-            stream: boolean;
-        }) => Promise<ChatKitResponse>;
-    };
-}
+/**
+ * 生成 AI 回應
+ */
+export async function generateWindMessage(params: GenerateMessageParams): Promise<string> {
+    const {
+        systemPrompt,
+        userMessage,
+        conversationHistory = [],
+        model = 'gpt-4-turbo-preview',
+    } = params;
 
-// Mock ChatKit 實作（待替換為真實 SDK）
-class MockChatKit implements ChatKitClient {
-    private apiKey: string;
-    private projectId: string;
+    try {
+        const messages: ChatKitMessage[] = [
+            { role: 'system', content: systemPrompt },
+            ...conversationHistory,
+            { role: 'user', content: userMessage },
+        ];
 
-    constructor(config: { apiKey: string; projectId: string }) {
-        this.apiKey = config.apiKey;
-        this.projectId = config.projectId;
-    }
-
-    messages = {
-        create: async (params: {
-            model: string;
-            messages: ChatKitMessage[];
-            stream: boolean;
-        }): Promise<ChatKitResponse> => {
-            // TODO: 實際呼叫 OpenAI API
-            console.warn('Using mock ChatKit implementation');
-
-            // 暫時返回模擬回應
-            const userMessage = params.messages.find(m => m.role === 'user')?.content || '';
-            return {
-                output_text: `[Mock Response] 收到訊息：${userMessage}`
-            };
-        }
-    };
-}
-
-// 只在實際使用時才初始化（避免建置時錯誤）
-let chatkitInstance: ChatKitClient | null = null;
-
-export const getChatKit = (): ChatKitClient => {
-    if (!CHATKIT_API_KEY || !CHATKIT_PROJECT_ID) {
-        throw new Error('ChatKit is not configured. Please set CHATKIT_API_KEY and CHATKIT_PROJECT_ID environment variables.');
-    }
-
-    if (!chatkitInstance) {
-        chatkitInstance = new MockChatKit({
-            apiKey: CHATKIT_API_KEY,
-            projectId: CHATKIT_PROJECT_ID,
+        const response = await openai.chat.completions.create({
+            model,
+            messages: messages as any, // OpenAI's ChatCompletionMessageParam type is compatible
+            temperature: 0.8,
+            max_tokens: 200, // 限制回應長度以控制 TTS 成本
         });
+
+        return response.choices[0]?.message?.content || '抱歉，我現在有點忙，等等再回你。';
+    } catch (error) {
+        console.error('OpenAI API error:', error);
+        throw new Error('Failed to generate response');
     }
+}
 
-    return chatkitInstance;
-};
+/**
+ * 檢查 API 是否已設定
+ */
+export function isOpenAIConfigured(): boolean {
+    return !!OPENAI_API_KEY;
+}
 
-// 檢查 ChatKit 是否已設定
-export const isChatKitConfigured = (): boolean => {
-    return !!(CHATKIT_API_KEY && CHATKIT_PROJECT_ID);
-};
-
-// 為了向後相容，導出預設實例（但可能為 null）
-export const chatkit = isChatKitConfigured() ? getChatKit() : null;
-
-export default chatkit;
+export default { generateWindMessage, isOpenAIConfigured };
